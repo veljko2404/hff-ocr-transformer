@@ -1,30 +1,22 @@
 from PIL import ImageEnhance, Image, ImageFilter
 import random
-import numpy as np
 from config import *
 
 
 def contrast(img):
-    c = random.uniform(0.5,1.7)
+    c = random.uniform(0.7,1.3)
     return ImageEnhance.Contrast(img).enhance(c)
 
 def gamma(img):
-    g = random.uniform(0.5,1.5)
+    g = random.uniform(0.8,1.2)
     arr = np.array(img)/255.0
     arr = np.power(arr, g)
     arr = (arr*255).astype(np.uint8)
     return Image.fromarray(arr)
 
-def motion_blur(img):
-    size = random.choice([3,5,7])
-    kernel = np.zeros((size,size))
-    kernel[int((size-1)/2), :] = np.ones(size)
-    kernel = kernel / size
-    return img.filter(ImageFilter.Kernel((size,size), kernel.flatten(), scale=1))
-
 def perspective(img):
-    dx = random.uniform(-0.15,0.15) * IMG_W
-    dy = random.uniform(-0.15,0.15) * IMG_H
+    dx = random.uniform(-0.05,0.05) * IMG_W
+    dy = random.uniform(-0.05,0.05) * IMG_H
 
     coeffs = (
         1, dx/IMG_W, 0,
@@ -52,25 +44,37 @@ def gradient_bg():
             px[x, y] = val + random.randint(-5, 5)
     return img
 
+def brightness(img):
+    b = random.uniform(0.8, 1.2)
+    return ImageEnhance.Brightness(img).enhance(b)
+
+# Augmentation: salt-and-pepper noise (random pure black or white pixels)
+def noise(img, a, b):
+    img = img.copy()
+    px = img.load()
+    for _ in range(random.randint(a, b)):
+        px[random.randint(0, IMG_W - 1), random.randint(0, IMG_H - 1)] = 0 if random.random() < 0.5 else 255
+    return img
+
 FONTS = [
     "fonts/DejaVuSans.ttf",
     "fonts/DejaVu Sans Bold.ttf",
     "fonts/ARIAL.TTF",
     "fonts/Liberation Sans Regular.ttf",
-    "fonts/AlfaSlabOne-Regular",
-    "fonts/BebasNeue-Regular",
-    "fonts/Bungee-Regular",
-    "fonts/DancingScript-VariableFont_wght",
-    "fonts/InstrumentSerif-Regular",
-    "fonts/Lexend-VariableFont_wght",
-    "fonts/LobsterTwo-Regular",
-    "fonts/Montserrat-VariableFont_wght",
-    "fonts/OpenSans-VariableFont_wdth,wght",
-    "fonts/Pacifico-Regular",
-    "fonts/PlayfairDisplay-VariableFont_wght",
-    "fonts/RobotoCondensed-VariableFont_wght",
-    "fonts/RobotoMono-VariableFont_wght",
-    "fonts/RobotoSlab-VariableFont_wght",
-    "fonts/Roboto-VariableFont_wdth,wght",
+    "fonts/AlfaSlabOne-Regular.ttf",
+    "fonts/BebasNeue-Regular.ttf",
+    "fonts/Bungee-Regular.ttf",
+    "fonts/DancingScript-VariableFont_wght.ttf",
+    "fonts/InstrumentSerif-Regular.ttf",
+    "fonts/Lexend-VariableFont_wght.ttf",
+    "fonts/LobsterTwo-Regular.ttf",
+    "fonts/Montserrat-VariableFont_wght.ttf",
+    "fonts/OpenSans-VariableFont_wdth,wght.ttf",
+    "fonts/Pacifico-Regular.ttf",
+    "fonts/PlayfairDisplay-VariableFont_wght.ttf",
+    "fonts/RobotoCondensed-VariableFont_wght.ttf",
+    "fonts/RobotoMono-VariableFont_wght.ttf",
+    "fonts/RobotoSlab-VariableFont_wght.ttf",
+    "fonts/Roboto-VariableFont_wdth,wght.ttf",
 ]
 
