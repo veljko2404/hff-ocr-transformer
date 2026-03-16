@@ -1,10 +1,9 @@
 import torch
 import string
-import numpy as np
 
-#N_IMAGES = 50_000 # total number of images to generate
-N_IMAGES = 50
-IMG_W, IMG_H = 256, 64 # images width and height
+N_IMAGES = 100_000 # total number of images to generate
+
+IMG_W, IMG_H = 286, 64 # images width and height
 
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 "
 

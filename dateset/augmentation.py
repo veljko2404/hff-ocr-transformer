@@ -1,14 +1,14 @@
 from PIL import ImageEnhance, Image, ImageFilter
 import random
 from config import *
-
+import numpy as np
 
 def contrast(img):
     c = random.uniform(0.7,1.3)
     return ImageEnhance.Contrast(img).enhance(c)
 
 def gamma(img):
-    g = random.uniform(0.8,1.2)
+    g = random.uniform(0.75,1.25)
     arr = np.array(img)/255.0
     arr = np.power(arr, g)
     arr = (arr*255).astype(np.uint8)
@@ -35,8 +35,8 @@ def gradient_bg():
     img = Image.new("L", (IMG_W, IMG_H))
     px = img.load()
 
-    start = random.randint(180, 255)
-    end = random.randint(180, 255)
+    start = random.randint(200, 250)
+    end = random.randint(200, 250)
 
     for x in range(IMG_W):
         val = int(start + (end - start) * x / IMG_W)
@@ -55,6 +55,13 @@ def noise(img, a, b):
     for _ in range(random.randint(a, b)):
         px[random.randint(0, IMG_W - 1), random.randint(0, IMG_H - 1)] = 0 if random.random() < 0.5 else 255
     return img
+
+def gaussian_blur(img, amount):
+    return img.filter(ImageFilter.GaussianBlur(random.uniform(0.0, amount)))
+
+def rotate_img(img, degrees, bg):
+        angle = random.uniform(-degrees, degrees)
+        return img.rotate(angle, resample=Image.BILINEAR, fillcolor=bg)
 
 FONTS = [
     "fonts/DejaVuSans.ttf",
