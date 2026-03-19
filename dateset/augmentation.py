@@ -26,11 +26,6 @@ def perspective(img):
     )
     return img.transform((IMG_W,IMG_H), Image.PERSPECTIVE, coeffs, Image.BILINEAR)
 
-def texture_bg():
-    arr = np.random.normal(220, 15, (IMG_H, IMG_W))
-    arr = np.clip(arr, 0, 255).astype(np.uint8)
-    return Image.fromarray(arr, "L")
-
 def gradient_bg():
     img = Image.new("L", (IMG_W, IMG_H))
     px = img.load()
@@ -68,16 +63,11 @@ FONTS = [
     "fonts/DejaVu Sans Bold.ttf",
     "fonts/ARIAL.TTF",
     "fonts/Liberation Sans Regular.ttf",
-    "fonts/AlfaSlabOne-Regular.ttf",
     "fonts/BebasNeue-Regular.ttf",
-    "fonts/Bungee-Regular.ttf",
-    "fonts/DancingScript-VariableFont_wght.ttf",
     "fonts/InstrumentSerif-Regular.ttf",
     "fonts/Lexend-VariableFont_wght.ttf",
-    "fonts/LobsterTwo-Regular.ttf",
     "fonts/Montserrat-VariableFont_wght.ttf",
     "fonts/OpenSans-VariableFont_wdth,wght.ttf",
-    "fonts/Pacifico-Regular.ttf",
     "fonts/PlayfairDisplay-VariableFont_wght.ttf",
     "fonts/RobotoCondensed-VariableFont_wght.ttf",
     "fonts/RobotoMono-VariableFont_wght.ttf",

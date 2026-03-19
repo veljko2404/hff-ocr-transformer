@@ -3,7 +3,7 @@ import string
 
 N_IMAGES = 100_000 # total number of images to generate
 
-IMG_W, IMG_H = 286, 64 # images width and height
+IMG_W, IMG_H = 288, 64 # images width and height
 
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 "
 
