@@ -9,57 +9,57 @@ import re
 from config import *
 
 
-def sinusoidal_pos_enc(max_len: int, d_model: int) -> torch.Tensor:
-    """
-    Returns positional encoding of shape [max_len, 1, d_model] (broadcastable over batch).
-    Stored as a non-trainable buffer in model.
-    """
-    pe = torch.zeros(max_len, d_model)
-    pos = torch.arange(0, max_len, dtype=torch.float32).unsqueeze(1)
-    div = torch.exp(torch.arange(0, d_model, 2, dtype=torch.float32) * (-math.log(10000.0) / d_model))
-    pe[:, 0::2] = torch.sin(pos * div)
-    pe[:, 1::2] = torch.cos(pos * div)
-    return pe.unsqueeze(1)  # [max_len, 1, d_model]
-
 class CNNTransformerOCR(nn.Module):
     """
     OCR model: CNN feature extractor -> Transformer encoder -> CTC classifier
-    Input: [B, 1, 70, 280] (grayscale already, or you can convert before)
+    Input: [B, 1, 64, 288] (grayscale already, or you can convert before)
     Output: [T, B, num_classes] - logits for CTC loss; num_classes = vocab + 1 blank
     """
-    def __init__(self, num_classes: int, img_h: int = 70, img_w: int = 280):
+    def __init__(self, num_classes: int):
         super().__init__()
 
         self.cnn = nn.Sequential(
-            # Block 1: [B,1,70,280] -> [B,64,35,140]
-            nn.Conv2d(1, 64, 3, padding=1), nn.BatchNorm2d(64), nn.ReLU(inplace=True),
+            # Block 1: [B,1,64,288] -> [B,64,32,144]
+            nn.Conv2d(1, 64, 3, padding=1), 
+            nn.BatchNorm2d(64), nn.ReLU(inplace=True),
             nn.MaxPool2d(2, 2),
 
-            # Block 2: [B,64,35,140] -> [B,128,17,140]  (height / 2, width same)
-            nn.Conv2d(64, 128, 3, padding=1), nn.BatchNorm2d(128), nn.ReLU(inplace=True),
+
+            # Block 2: [B,64,32,144] -> [B,128,16,144]  (height / 2, width same)
+            nn.Conv2d(64, 128, 3, padding=1), 
+            nn.BatchNorm2d(128), nn.ReLU(inplace=True),
             nn.MaxPool2d((2, 1), (2, 1)),
 
-            # Block 3: [B,128,17,140] -> [B,256,8,140]
-            nn.Conv2d(128, 256, 3, padding=1), nn.BatchNorm2d(256), nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, 3, padding=1), nn.BatchNorm2d(256), nn.ReLU(inplace=True),
+
+            # Block 3: [B,128,16,144] -> [B,256,8,144]
+            nn.Conv2d(128, 256, 3, padding=1), 
+            nn.BatchNorm2d(256), nn.ReLU(inplace=True),
+            
+            nn.Conv2d(256, 256, 3, padding=1), 
+            nn.BatchNorm2d(256), nn.ReLU(inplace=True),
             nn.MaxPool2d((2, 1), (2, 1)),
 
-            # Block 4: [B,256,8,140] -> [B,512,4,140]
-            nn.Conv2d(256, 512, 3, padding=1), nn.BatchNorm2d(512), nn.ReLU(inplace=True),
-            nn.Conv2d(512, 512, 3, padding=1), nn.BatchNorm2d(512), nn.ReLU(inplace=True),
-            nn.MaxPool2d((2, 1), (2, 1)),
 
-            # Collapse remaining height (4 -> 1): [B,512,4,140] -> [B,512,1,140]
+            # Block 4: [B,256,8,144] -> [B,512,4,144]
+            nn.Conv2d(256, 512, 3, padding=1), 
+            nn.BatchNorm2d(512), nn.ReLU(inplace=True),
+            
+            nn.Conv2d(512, 512, 3, padding=1), 
+            nn.BatchNorm2d(512), nn.ReLU(inplace=True),
+            nn.MaxPool2d((2, 1), (2, 1)),
+            
+
+            # Collapse remaining height (4 -> 1): [B,512,4,144] -> [B,512,1,144]
             nn.Conv2d(512, 512, kernel_size=(4, 1), padding=0),
-            nn.BatchNorm2d(512),
-            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(512), nn.ReLU(inplace=True),
+            nn.Dropout2d(0.1)
         )
 
         # find the sequence length T (max_T)
         with torch.no_grad():
-            dummy = torch.zeros(1, 1, img_h, img_w) # fake input used only to infer CNN output shape
-            out = self.cnn(dummy)  # forward pass without gradient tracking [1, 512, 1, 140]
-            self.max_T = out.shape[-1] # sequence length after CNN (140 in our example)
+            dummy = torch.zeros(1, 1, IMG_H, IMG_W) # fake input used only to infer CNN output shape
+            out = self.cnn(dummy)  # forward pass without gradient tracking [1, 512, 1, 144]
+            self.max_T = out.shape[-1] # sequence length after CNN (144 in our example)
 
         # Positional encoding buffer: [max_T, 1, 512]
         self.register_buffer("pos_enc", sinusoidal_pos_enc(self.max_T, 512), persistent=False)
@@ -80,15 +80,27 @@ class CNNTransformerOCR(nn.Module):
         self.classifier = nn.Linear(512, num_classes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        f = self.cnn(x)              # [B,512,1,140]
-        f = f.squeeze(2)             # [B,512,140]
-        f = f.permute(2, 0, 1)       # [140,B,512]
+        f = self.cnn(x)              # [B,512,1,144]
+        f = f.squeeze(2)             # [B,512,144]
+        f = f.permute(2, 0, 1)       # [144,B,512]
 
         T = f.size(0)
-        f = f + self.pos_enc[:T]     # [140,B,512] + [140,1,512] - adding positional encoding
+        f = f + self.pos_enc[:T]     # [144,B,512] + [144,1,512] - adding positional encoding
 
-        y = self.transformer(f)      # [140,B,512]
-        return self.classifier(y)  # [140,B,num_classes]
+        y = self.transformer(f)      # [144,B,512]
+        return self.classifier(y)  # [144,B,num_classes]
+
+def sinusoidal_pos_enc(max_len: int, d_model: int) -> torch.Tensor:
+    """
+    Returns positional encoding of shape [max_len, 1, d_model] (broadcastable over batch).
+    Stored as a non-trainable buffer in model.
+    """
+    pe = torch.zeros(max_len, d_model)
+    pos = torch.arange(0, max_len, dtype=torch.float32).unsqueeze(1)
+    div = torch.exp(torch.arange(0, d_model, 2, dtype=torch.float32) * (-math.log(10000.0) / d_model))
+    pe[:, 0::2] = torch.sin(pos * div)
+    pe[:, 1::2] = torch.cos(pos * div)
+    return pe.unsqueeze(1)  # [max_len, 1, d_model]
 
 class OCRDataset(Dataset):
     """
