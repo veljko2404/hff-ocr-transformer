@@ -29,6 +29,7 @@ class CNNTransformerOCR(nn.Module):
             nn.Conv2d(64, 128, 3, padding=1), 
             nn.BatchNorm2d(128), nn.ReLU(inplace=True),
             nn.MaxPool2d((2, 1), (2, 1)),
+            nn.Dropout2d(0.05),
 
 
             # Block 3: [B,128,16,144] -> [B,256,8,144]
@@ -38,6 +39,7 @@ class CNNTransformerOCR(nn.Module):
             nn.Conv2d(256, 256, 3, padding=1), 
             nn.BatchNorm2d(256), nn.ReLU(inplace=True),
             nn.MaxPool2d((2, 1), (2, 1)),
+            nn.Dropout2d(0.05),
 
 
             # Block 4: [B,256,8,144] -> [B,512,4,144]
@@ -62,7 +64,7 @@ class CNNTransformerOCR(nn.Module):
             self.max_T = out.shape[-1] # sequence length after CNN (144 in our example)
 
         # Positional encoding buffer: [max_T, 1, 512]
-        self.register_buffer("pos_enc", sinusoidal_pos_enc(self.max_T, 512), persistent=False)
+        self.register_buffer("pos_enc", sinusoidal_pos_enc(self.max_T, 512), persistent=True)
 
         # Transformer encoder with 4 layers of multi-head self-attention
         enc_layer = nn.TransformerEncoderLayer(
@@ -74,7 +76,7 @@ class CNNTransformerOCR(nn.Module):
             norm_first=True,      # stabilizes training
             activation="gelu",    # often better than ReLU here
         )
-        self.transformer = nn.TransformerEncoder(enc_layer, num_layers=4)
+        self.transformer = nn.TransformerEncoder(enc_layer, num_layers=6)
 
         # classifier - projects each sequence position to class logits
         self.classifier = nn.Linear(512, num_classes)

@@ -11,11 +11,10 @@ ALPHABET_FOR_GENERATING = string.ascii_uppercase + string.ascii_lowercase + stri
 
 MIN_LEN = 2 # minimum text length
 
-MAX_LEN = 15 # maximum text length
+MAX_LEN = 12 # maximum text length
 
 ALLOWED = set(ALPHABET) # set of valid characters
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 DIFFICULTY_RATIO = [0.2, 0.6, 0.2] # 20% clean, 60% medium and 20% hard augmentation for images generation
-

@@ -59,19 +59,19 @@ def rotate_img(img, degrees, bg):
         return img.rotate(angle, resample=Image.BILINEAR, fillcolor=bg)
 
 FONTS = [
-    "fonts/DejaVuSans.ttf",
-    "fonts/DejaVu Sans Bold.ttf",
-    "fonts/ARIAL.TTF",
-    "fonts/Liberation Sans Regular.ttf",
-    "fonts/BebasNeue-Regular.ttf",
-    "fonts/InstrumentSerif-Regular.ttf",
-    "fonts/Lexend-VariableFont_wght.ttf",
-    "fonts/Montserrat-VariableFont_wght.ttf",
-    "fonts/OpenSans-VariableFont_wdth,wght.ttf",
-    "fonts/PlayfairDisplay-VariableFont_wght.ttf",
-    "fonts/RobotoCondensed-VariableFont_wght.ttf",
-    "fonts/RobotoMono-VariableFont_wght.ttf",
-    "fonts/RobotoSlab-VariableFont_wght.ttf",
-    "fonts/Roboto-VariableFont_wdth,wght.ttf",
+    "dataset/fonts/DejaVuSans.ttf",
+    "dataset/fonts/DejaVu Sans Bold.ttf",
+    "dataset/fonts/ARIAL.TTF",
+    "dataset/fonts/Liberation Sans Regular.ttf",
+    "dataset/fonts/BebasNeue-Regular.ttf",
+    "dataset/fonts/InstrumentSerif-Regular.ttf",
+    "dataset/fonts/Lexend-VariableFont_wght.ttf",
+    "dataset/fonts/Montserrat-VariableFont_wght.ttf",
+    "dataset/fonts/OpenSans-VariableFont_wdth,wght.ttf",
+    "dataset/fonts/PlayfairDisplay-VariableFont_wght.ttf",
+    "dataset/fonts/RobotoCondensed-VariableFont_wght.ttf",
+    "dataset/fonts/RobotoMono-VariableFont_wght.ttf",
+    "dataset/fonts/RobotoSlab-VariableFont_wght.ttf",
+    "dataset/fonts/Roboto-VariableFont_wdth.ttf",
 ]
 
