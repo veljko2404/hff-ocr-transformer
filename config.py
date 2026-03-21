@@ -18,3 +18,17 @@ ALLOWED = set(ALPHABET) # set of valid characters
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 DIFFICULTY_RATIO = [0.2, 0.6, 0.2] # 20% clean, 60% medium and 20% hard augmentation for images generation
+
+BATCH_SIZE = 128
+
+EPOCHS = 20
+
+LR = 1e-4 # learning rate
+
+WEIGHT_DECAY = 2e-2 # L2 regularization strength for AdamW
+
+NUM_WORKERS = 2 # DataLoader worker processes
+
+WARMUP_EPOCHS = 4 # number of epochs for linear LR warmup
+
+NUM_CLASSES = len(ALPHABET) + 1 # vocabulary size + CTC blank token

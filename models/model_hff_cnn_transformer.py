@@ -89,20 +89,38 @@ class HFFCNNTransformerOCR(nn.Module):
         self.classifier = nn.Linear(512, num_classes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        s1 = self.cnn_shallow(x)       # [B, 128, 16, 144]  — grubi feature-i
-        s2 = self.cnn_deep(s1)         # [B, 512,  4, 144]  — duboki feature-i
-        s3 = self.cnn_collapse(s2)     # [B, 512,  1, 144]  — kolapsirana visina
+        s1 = self.cnn_shallow(x)
+        s2 = self.cnn_deep(s1)
+        s3 = self.cnn_collapse(s2)
 
-        p1 = self.proj_shallow(s1)     # [B, 512,  1, 144]
-        p2 = self.proj_deep(s2)        # [B, 512,  1, 144]
+        p1 = self.proj_shallow(s1)
+        p2 = self.proj_deep(s2)
 
         fused = self.fusion(
-            torch.cat([p1, p2, s3], dim=1)   # [B, 1536, 1, 144]
-        )                                     # → [B, 512, 1, 144]
+            torch.cat([p1, p2, s3], dim=1)
+        )
 
         f = fused.squeeze(2).permute(2, 0, 1)  # [144, B, 512]
         T = f.size(0)
         f = f + self.pos_enc[:T]
 
-        y = self.transformer(f)
-        return self.classifier(y)             # [144, B, num_classes]
+        mask = self.estimate_src_key_padding_mask(f)  # ← novo
+        y = self.transformer(f, src_key_padding_mask=mask)  # ← dodat argument
+        return self.classifier(y)           # [144, B, num_classes]
+
+    def estimate_src_key_padding_mask(self, f: torch.Tensor) -> torch.Tensor:
+        """
+        f: [T, B, 512] — CNN feature-i nakon squeeze i permute
+        Vraća: [B, T] bool maska — True = ignoriši tu poziciju
+        """
+        # energy po timestep-u: koliko "aktivna" je svaka kolona
+        energy = f.abs().mean(dim=-1)  # [T, B]
+        energy = energy.permute(1, 0)  # [B, T]
+
+        # prag: kolone ispod X% max energije se maskiraju
+        threshold = energy.max(dim=1, keepdim=True).values * 0.05
+        mask = energy < threshold  # [B, T] — True = prazna kolona
+
+        # sigurnost: nikad ne maskiraj sve — ostavi bar prvih 10
+        mask[:, :10] = False
+        return mask
