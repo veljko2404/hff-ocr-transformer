@@ -29,6 +29,6 @@ WEIGHT_DECAY = 2e-2 # L2 regularization strength for AdamW
 
 NUM_WORKERS = 2 # DataLoader worker processes
 
-WARMUP_EPOCHS = 4 # number of epochs for linear LR warmup
+WARMUP_EPOCHS = 3 # number of epochs for linear LR warmup
 
 NUM_CLASSES = len(ALPHABET) + 1 # vocabulary size + CTC blank token
