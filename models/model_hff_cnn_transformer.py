@@ -6,63 +6,63 @@ from models.model_cnn_transformer import sinusoidal_pos_enc
 class HFFCNNTransformerOCR(nn.Module):
     """
     Hierarchical Feature Fusion OCR model.
-    Uzima feature mape sa dva CNN nivoa i fusuje ih sa finalnim
-    pre nego što odu u transformer — daje mu i grube i fine feature-e.
+    Takes feature maps with two CNN levels and fuses them with final level
+    before they go to transformer, giving it both coarse and fine features.
     """
     def __init__(self, num_classes: int):
         super().__init__()
 
-        # ── Blok 1+2: [B,1,64,288] → [B,128,16,144] ──────────────────
+        # ── Block 1+2: [B,1,64,288] → [B,128,16,144]
         self.cnn_shallow = nn.Sequential(
             nn.Conv2d(1, 64, 3, padding=1),
             nn.BatchNorm2d(64), nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),                          # → [B,64,32,144]
+            nn.MaxPool2d(2, 2), # → [B,64,32,144]
 
             nn.Conv2d(64, 128, 3, padding=1),
             nn.BatchNorm2d(128), nn.ReLU(inplace=True),
-            nn.MaxPool2d((2, 1), (2, 1)),                # → [B,128,16,144]
+            nn.MaxPool2d((2, 1), (2, 1)), # → [B,128,16,144]
             nn.Dropout2d(0.05),
         )
 
-        # ── Blok 3+4: [B,128,16,144] → [B,512,4,144] ─────────────────
+        # ── Block 3+4: [B,128,16,144] → [B,512,4,144] ─────────────────
         self.cnn_deep = nn.Sequential(
             nn.Conv2d(128, 256, 3, padding=1),
             nn.BatchNorm2d(256), nn.ReLU(inplace=True),
             nn.Conv2d(256, 256, 3, padding=1),
             nn.BatchNorm2d(256), nn.ReLU(inplace=True),
-            nn.MaxPool2d((2, 1), (2, 1)),                # → [B,256,8,144]
+            nn.MaxPool2d((2, 1), (2, 1)), # → [B,256,8,144]
             nn.Dropout2d(0.05),
 
             nn.Conv2d(256, 512, 3, padding=1),
             nn.BatchNorm2d(512), nn.ReLU(inplace=True),
             nn.Conv2d(512, 512, 3, padding=1),
             nn.BatchNorm2d(512), nn.ReLU(inplace=True),
-            nn.MaxPool2d((2, 1), (2, 1)),                # → [B,512,4,144]
+            nn.MaxPool2d((2, 1), (2, 1)), # → [B,512,4,144]
         )
 
-        # ── Finalni height collapse: [B,512,4,144] → [B,512,1,144] ───
+        # ── Final height collapse: [B,512,4,144] → [B,512,1,144] ───
         self.cnn_collapse = nn.Sequential(
             nn.Conv2d(512, 512, kernel_size=(4, 1), padding=0),
             nn.BatchNorm2d(512), nn.ReLU(inplace=True),
             nn.Dropout2d(0.1),
         )
 
-        # ── Projekcije za scale1 i scale2 na d=512 ────────────────────
-        # scale1: [B,128,16,144] → avg pool visinu → [B,128,1,144] → proj → [B,512,1,144]
+        # ── Projections for scale1 and scale2 to d=512 ────────────────────
+        # scale1: [B,128,16,144] → avg pool height → [B,128,1,144] → proj → [B,512,1,144]
         self.proj_shallow = nn.Sequential(
-            nn.AdaptiveAvgPool2d((1, None)),             # kolapsira visinu
-            nn.Conv2d(128, 512, 1),                      # 1×1 projekcija
+            nn.AdaptiveAvgPool2d((1, None)),             # collapses height
+            nn.Conv2d(128, 512, 1), # 1×1 projection
             nn.BatchNorm2d(512), nn.ReLU(inplace=True),
         )
 
-        # scale2: [B,512,4,144] → avg pool visinu → [B,512,1,144] (već 512, samo pool)
+        # scale2: [B,512,4,144] → avg pool height → [B,512,1,144]
         self.proj_deep = nn.Sequential(
             nn.AdaptiveAvgPool2d((1, None)),
             nn.Conv2d(512, 512, 1),
             nn.BatchNorm2d(512), nn.ReLU(inplace=True),
         )
 
-        # ── Fusion: concat 3×512 → 512 putem conv1×1 ─────────────────
+        # ── Fusion: concat 3×512 → 512 via conv1×1 ─────────────────
         self.fusion = nn.Sequential(
             nn.Conv2d(512 * 3, 512, 1),
             nn.BatchNorm2d(512), nn.ReLU(inplace=True),
@@ -105,22 +105,22 @@ class HFFCNNTransformerOCR(nn.Module):
         f = f + self.pos_enc[:T]
 
         mask = self.estimate_src_key_padding_mask(f)  # ← novo
-        y = self.transformer(f, src_key_padding_mask=mask)  # ← dodat argument
+        y = self.transformer(f, src_key_padding_mask=mask)  # ← added argument
         return self.classifier(y)           # [144, B, num_classes]
 
     def estimate_src_key_padding_mask(self, f: torch.Tensor) -> torch.Tensor:
         """
-        f: [T, B, 512] — CNN feature-i nakon squeeze i permute
-        Vraća: [B, T] bool maska — True = ignoriši tu poziciju
+        f: [T, B, 512] — CNN features after squeeze i permute
+        Vraća: [B, T] bool mask — True = ignore that position
         """
-        # energy po timestep-u: koliko "aktivna" je svaka kolona
+        # energy by timestep: how "active" is each column
         energy = f.abs().mean(dim=-1)  # [T, B]
         energy = energy.permute(1, 0)  # [B, T]
 
-        # prag: kolone ispod X% max energije se maskiraju
+        # limit: columns below X% max energy are getting masked
         threshold = energy.max(dim=1, keepdim=True).values * 0.05
-        mask = energy < threshold  # [B, T] — True = prazna kolona
+        mask = energy < threshold  # [B, T] — True = empty column
 
-        # sigurnost: nikad ne maskiraj sve — ostavi bar prvih 10
+        # safety: never mask everything — leave at least first 10
         mask[:, :10] = False
         return mask
