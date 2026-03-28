@@ -21,11 +21,11 @@ DIFFICULTY_RATIO = [0.2, 0.6, 0.2] # 20% clean, 60% medium and 20% hard augmenta
 
 BATCH_SIZE = 128
 
-EPOCHS = 20
+EPOCHS = 15
 
-LR = 1e-4 # learning rate
+LR = 7e-5 # learning rate
 
-WEIGHT_DECAY = 2e-2 # L2 regularization strength for AdamW
+WEIGHT_DECAY = 1e-2 # L2 regularization strength for AdamW
 
 NUM_WORKERS = 2 # DataLoader worker processes
 
