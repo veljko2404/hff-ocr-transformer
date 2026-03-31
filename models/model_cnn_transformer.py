@@ -24,34 +24,32 @@ class CNNTransformerOCR(nn.Module):
             nn.BatchNorm2d(64), nn.ReLU(inplace=True),
             nn.MaxPool2d(2, 2),
 
-
             # Block 2: [B,64,32,144] -> [B,128,16,144]  (height / 2, width same)
             nn.Conv2d(64, 128, 3, padding=1), 
             nn.BatchNorm2d(128), nn.ReLU(inplace=True),
             nn.MaxPool2d((2, 1), (2, 1)),
             nn.Dropout2d(0.05),
 
-
-            # Block 3: [B,128,16,144] -> [B,256,8,144]
+            # Block 3: [B,128,16,144]
             nn.Conv2d(128, 256, 3, padding=1), 
             nn.BatchNorm2d(256), nn.ReLU(inplace=True),
-            
+
+            # Block 4: [B,128,16,144] -> [B,256,8,144]
             nn.Conv2d(256, 256, 3, padding=1), 
             nn.BatchNorm2d(256), nn.ReLU(inplace=True),
             nn.MaxPool2d((2, 1), (2, 1)),
             nn.Dropout2d(0.05),
 
-
-            # Block 4: [B,256,8,144] -> [B,512,4,144]
+            # Block 5: [B,256,8,144]
             nn.Conv2d(256, 512, 3, padding=1), 
             nn.BatchNorm2d(512), nn.ReLU(inplace=True),
-            
+
+            # Block 6: [B,256,8,144] -> [B,512,4,144]
             nn.Conv2d(512, 512, 3, padding=1), 
             nn.BatchNorm2d(512), nn.ReLU(inplace=True),
             nn.MaxPool2d((2, 1), (2, 1)),
-            
 
-            # Collapse remaining height (4 -> 1): [B,512,4,144] -> [B,512,1,144]
+            # Block 7: Collapse remaining height (4 -> 1): [B,512,4,144] -> [B,512,1,144]
             nn.Conv2d(512, 512, kernel_size=(4, 1), padding=0),
             nn.BatchNorm2d(512), nn.ReLU(inplace=True),
             nn.Dropout2d(0.1)
