@@ -24,7 +24,7 @@ class HFFCNNTransformerOCR(nn.Module):
             nn.Dropout2d(0.05),
         )
 
-        # ── Block 3+4: [B,128,16,144] → [B,512,4,144] ─────────────────
+        # ── Block 3+4+5+6: [B,128,16,144] → [B,512,4,144] ─────────────────
         self.cnn_deep = nn.Sequential(
             nn.Conv2d(128, 256, 3, padding=1),
             nn.BatchNorm2d(256), nn.ReLU(inplace=True),
