@@ -76,9 +76,7 @@ class HFFCNNTransformerOCR(nn.Module):
             c = self.cnn_collapse(d)
             self.max_T = c.shape[-1]  # 144
 
-        self.register_buffer(
-            "pos_enc", sinusoidal_pos_enc(self.max_T, 512), persistent=True
-        )
+        self.register_buffer("pos_enc", sinusoidal_pos_enc(self.max_T, 512), persistent=True)
 
         enc_layer = nn.TransformerEncoderLayer(
             d_model=512, nhead=8, dim_feedforward=2048,
@@ -96,15 +94,13 @@ class HFFCNNTransformerOCR(nn.Module):
         p1 = self.proj_shallow(s1)
         p2 = self.proj_deep(s2)
 
-        fused = self.fusion(
-            torch.cat([p1, p2, s3], dim=1)
-        )
+        fused = self.fusion(torch.cat([p1, p2, s3], dim=1))
 
         f = fused.squeeze(2).permute(2, 0, 1)  # [144, B, 512]
         T = f.size(0)
         f = f + self.pos_enc[:T]
 
-        mask = self.estimate_src_key_padding_mask(f)  # ← novo
+        mask = self.estimate_src_key_padding_mask(f)  # ← new
         y = self.transformer(f, src_key_padding_mask=mask)  # ← added argument
         return self.classifier(y)           # [144, B, num_classes]
 
