@@ -100,14 +100,19 @@ class HFFCNNTransformerOCR(nn.Module):
         T = f.size(0)
         f = f + self.pos_enc[:T]
 
-        mask = self.estimate_src_key_padding_mask(f)  # ← new
+        mask = self.estimate_src_key_padding_mask(f)  # mask low-energy timesteps to reduce attention noise
         y = self.transformer(f, src_key_padding_mask=mask)  # ← added argument
         return self.classifier(y)           # [144, B, num_classes]
 
     def estimate_src_key_padding_mask(self, f: torch.Tensor) -> torch.Tensor:
         """
-        f: [T, B, 512] — CNN features after squeeze i permute
-        Vraća: [B, T] bool mask — True = ignore that position
+        Generates a boolean padding mask by thresholding column energy.
+        Columns below 5% of the max energy are marked as padding (True = ignore).
+
+        Args:
+            f: [T, B, 512] — feature sequence after positional encoding
+        Returns:
+            mask: [B, T] bool — True at positions the transformer should ignore
         """
         # energy by timestep: how "active" is each column
         energy = f.abs().mean(dim=-1)  # [T, B]
