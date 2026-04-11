@@ -6,6 +6,8 @@ This project was developed as part of a research paper submitted to the **Fifth 
 
 ---
 
+![Example](models/image_of_hff_cnn_transformer_model.png)
+
 ## Overview
 
 Two models are implemented and compared under identical training conditions:
