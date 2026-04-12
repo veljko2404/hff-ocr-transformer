@@ -2,7 +2,7 @@
 
 A PyTorch-based project for printed text recognition using a CNN–Transformer architecture with Hierarchical Feature Fusion (HFF), trained end-to-end with CTC loss on a fully synthetic dataset.
 
-This project was developed as part of a research paper submitted to the **Fifth Serbian International Conference on Applied Artificial Intelligence (AAI2026)**.
+This project was developed as part of a research [paper](HFF_CNN_Transformer_OCR_SICAAI2026.docx) submitted to the **Fifth Serbian International Conference on Applied Artificial Intelligence (AAI2026)**.
 
 ---
 
@@ -102,4 +102,4 @@ matplotlib
 
 ## Citation
 
-If you use this work, please cite the associated conference paper once published.
+If you use this work, please cite the associated conference paper.
