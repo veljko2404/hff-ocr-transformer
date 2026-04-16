@@ -21,7 +21,7 @@ Two models are implemented and compared under identical training conditions:
 | Test CER | 2.62% | 2.44% |
 | Test Loss | 0.0622 | 0.0570 |
 | Training Time | 62.22 min | 67.22 min |
-| Parameters | ~24M | ~24M |
+| Parameters | ~24.5M | ~25.6M |
 
 The HFF model achieves a **6.87% relative improvement** in test CER over the baseline.
 
